@@ -50,7 +50,7 @@ public class FreeMobileSMSServlet extends HttpServlet {
 			// Create a trust manager that does not validate certificate chains
 			TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
 				@Override
-				public java.security.cert.X509Certificate[] getAcceptedIssuers() {
+				public X509Certificate[] getAcceptedIssuers() {
 					return null;
 				}
 				@Override
@@ -61,7 +61,7 @@ public class FreeMobileSMSServlet extends HttpServlet {
 				}
 			} };
 			// Install the all-trusting trust manager
-			SSLContext sc = SSLContext.getInstance("SSL");//$NON-NLS-1$
+			SSLContext sc = SSLContext.getInstance("TLS");//$NON-NLS-1$
 			sc.init(null, trustAllCerts, new SecureRandom());
 			trustingSSLSocketFactory = sc.getSocketFactory();
 		} catch (KeyManagementException | NoSuchAlgorithmException e) {
@@ -154,6 +154,7 @@ public class FreeMobileSMSServlet extends HttpServlet {
 	@Override
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		setNoCache(response);
+		response.setContentType("text/html; charset=" + StandardCharsets.UTF_8.name());
 
 		String msg = request.getParameter("msg");//$NON-NLS-1$
 		if (msg == null || "".equals(msg.trim())) {
@@ -161,7 +162,7 @@ public class FreeMobileSMSServlet extends HttpServlet {
 			return;
 		}
 
-		String fullURLStr = gatewayUrl + URLEncoder.encode(msg, StandardCharsets.UTF_8.name());
+		String fullURLStr = gatewayUrl + URLEncoder.encode(msg, StandardCharsets.ISO_8859_1.name());//FIXME should RFC5997-encode?  http://tools.ietf.org/html/rfc5987
 		URL fullURL = new URL(fullURLStr);
 
 		Proxy proxy = Proxy.NO_PROXY;
@@ -180,7 +181,8 @@ public class FreeMobileSMSServlet extends HttpServlet {
 			connection.setDoInput(true);
 			connection.setDoOutput(false);
 			//connection.addRequestProperty("Authorization", BASIC_AUTH + Base64.encode("user name" + ':' + "pass phrase"));
-			//connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=utf-8");
+			//connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded; charset=" + StandardCharsets.UTF_8.name());
+			connection.setRequestProperty("Content-Type", "text/plain; charset=" + StandardCharsets.ISO_8859_1.name());
 
 			if (DEBUG) {
 				// Install the all-trusting host verifier
